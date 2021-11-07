@@ -11,6 +11,9 @@ class TaskModel extends Model
 
     protected $allowedFields=['task','task_description'];
 
+    protected $returnType = 'App\Entities\Tasks';
+    protected $useTimestamps = true;
+
     protected $validationRules    = [
         'task'  => 'required|alpha_numeric_space|min_length[3]',
         'task_description' => 'required|alpha_numeric_space|min_length[3]',

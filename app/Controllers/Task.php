@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 use  App\Models\TaskModel;
+use App\Entities\Tasks;
 
 class Task extends BaseController
 {
@@ -14,8 +15,7 @@ class Task extends BaseController
     }
 
     public function show($id){
-        $model = new TaskModel();
-        $data = $model->find($id);
+        $data=$this->getTaskor404($id);
 
         return view('Tasks/single',['data'=>$data]);
     }
@@ -27,10 +27,9 @@ class Task extends BaseController
     public function create(){
         $model = new TaskModel();
 
-        $result=$model->insert([
-            'task'=>$this->request->getPost('task'),
-            'task_description'=>$this->request->getPost('task_description')
-        ]);
+        $task = new Tasks($this->request->getPost());
+
+        $result=$model->insert($task);
 
         if($result === false){
           return redirect()->back()
@@ -41,8 +40,7 @@ class Task extends BaseController
     }
 
     public function edit($id){
-        $model = new TaskModel();
-        $data = $model->find($id);
+        $data=$this->getTaskor404($id);
 
         return view('Tasks/edit',['data'=>$data]);
     }
@@ -50,22 +48,34 @@ class Task extends BaseController
     public function update($id)
     {
         $model =new TaskModel();
+        $task = $model ->find($id);
+        
+        $task->fill($this->request->getPost());
 
-        $result=  $model->update($id,[
-            'task_description' => $this->request->getPost('task_description'),
-            'task'             => $this->request->getPost('task')
-        ]);
-
-        if($result){
-            return redirect()->to("/Task/show/$id")
-                            ->with('info','Task Updated successfully');
-        }else{
+        if(!$task->hasChanged()){
             return redirect()->back()
-                             ->with('errors',$model->errors());
-                             
+                             ->with('errors',$model->errors())
+                             ->with('warning','invalid input');
+        }
+        else{
+            $model->save($task);
+            return redirect()->to("/Task/show/$id")
+                             ->with('info','Task Updated successfully');
         }
 
-        
+  
 
     }
+
+    private function getTaskor404($id){
+        $model = new TaskModel();
+        $data = $model->find($id);
+
+        if($data === NULL){
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
+        return $data;
+    }
+
 }
